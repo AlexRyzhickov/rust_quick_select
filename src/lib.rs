@@ -5,8 +5,8 @@ use rand::SeedableRng;
 use std::cmp::Ordering;
 
 const LOOPS: u32 = 100;
-pub const VEC_SIZE: usize = 500_000;
-pub const LAST: usize = 3000;
+pub const VEC_SIZE: usize = 1_500_000;
+pub const LAST: usize = 50_000;
 pub const SEED: u64 = 0;
 
 #[derive(Clone, Copy, Debug)]
@@ -25,37 +25,6 @@ impl PartialEq<Self> for Doc {
         self.score == other.score
     }
 }
-
-// fn partition(v: &mut [A], mut l: usize, mut r: usize) -> usize {
-//     let pivot = v[(r + l) / 2].score;
-//     while l <= r {
-//         while v[l].score < pivot {
-//             l += 1;
-//         }
-//         while v[r].score > pivot {
-//             r -= 1;
-//         }
-//         if l >= r {
-//             break;
-//         }
-//         v.swap(l, r);
-//         l += 1;
-//         r -= 1;
-//     }
-//     r
-// }
-//
-// pub fn quick_select(v: &mut [A], l: usize, r: usize, k: usize) {
-//     if r == l {
-//         return;
-//     }
-//     let mid = partition(v, l, r);
-//     if k > mid {
-//         quick_select(v, mid + 1, r, k)
-//     } else {
-//         quick_select(v, l, mid, k)
-//     }
-// }
 
 fn partition<T: PartialOrd + Copy>(v: &mut [T], mut l: usize, mut r: usize) -> usize {
     let pivot = v[(r + l) / 2];
@@ -85,6 +54,37 @@ pub fn quick_select<T: PartialOrd + Copy>(v: &mut [T], l: usize, r: usize, k: us
         quick_select(v, mid + 1, r, k)
     } else {
         quick_select(v, l, mid, k)
+    }
+}
+
+fn partition_no_generic(v: &mut [Doc], mut l: usize, mut r: usize) -> usize {
+    let pivot = v[(r + l) / 2].score;
+    while l <= r {
+        while v[l].score < pivot {
+            l += 1;
+        }
+        while v[r].score > pivot {
+            r -= 1;
+        }
+        if l >= r {
+            break;
+        }
+        v.swap(l, r);
+        l += 1;
+        r -= 1;
+    }
+    r
+}
+
+pub fn quick_select_no_generic(v: &mut [Doc], l: usize, r: usize, k: usize) {
+    if r == l {
+        return;
+    }
+    let mid = partition_no_generic(v, l, r);
+    if k > mid {
+        quick_select_no_generic(v, mid + 1, r, k)
+    } else {
+        quick_select_no_generic(v, l, mid, k)
     }
 }
 
@@ -232,10 +232,35 @@ mod tests {
             }
         }
     }
+    #[test]
+    fn test_struct_no_generic_random() {
+        for _ in 0..LOOPS {
+            let mut v = gen_doc_vec(VEC_SIZE);
+            let r = v.len() - 1;
+            let k = v.len() - LAST;
+            quick_select(&mut v, 0, r, k);
+            let mut set: HashSet<OrderedFloat<f32>> = HashSet::new();
+            for &num in v.iter().rev().take(LAST) {
+                set.insert(OrderedFloat::from(num.score));
+            }
+            v.sort_by(|a, b| a.score.partial_cmp(&b.score).unwrap());
+            assert_eq!(LAST, set.len());
+            for &num in v.iter().rev().take(LAST) {
+                assert_eq!(set.contains(&OrderedFloat::from(num.score)), true);
+            }
+        }
+    }
 }
 
 pub fn gen_vec(size: usize) -> Vec<i32> {
     let mut v: Vec<i32> = (0..size).map(|i| 0 + i as i32).collect();
+    let mut rng = StdRng::seed_from_u64(SEED);
+    v.shuffle(&mut rng);
+    v
+}
+
+pub fn gen_doc_vec(size: usize) -> Vec<Doc> {
+    let mut v: Vec<Doc> = (0..size).map(|i| Doc{ id: 0, score: OrderedFloat::from(i as f32) }).collect();
     let mut rng = StdRng::seed_from_u64(SEED);
     v.shuffle(&mut rng);
     v
