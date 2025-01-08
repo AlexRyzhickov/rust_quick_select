@@ -4,6 +4,12 @@ use rand::rngs::StdRng;
 use rand::SeedableRng;
 use std::cmp::Ordering;
 
+const LOOPS: u32 = 100;
+pub const VEC_SIZE: usize = 10_000;
+pub const MIN: usize = 1000;
+pub const MAX: usize = 2001;
+pub const SEED: u64 = 0;
+
 #[derive(Clone, Copy, Debug)]
 pub struct Doc {
     pub id: u32,
@@ -211,16 +217,11 @@ mod tests {
             assert_eq!(set.contains(&num), true);
         }
     }
-
-    const LOOPS: u32 = 100;
-    const VEC_SIZE: usize = 10_000;
-    const MIN: usize = 1000;
-    const MAX: usize = 2001;
     #[test]
     fn test_i32_random() {
         for _ in 0..LOOPS {
             let mut v = gen_vec(VEC_SIZE);
-            let mut rng = StdRng::seed_from_u64(0);
+            let mut rng = StdRng::seed_from_u64(SEED);
             let last = rng.random_range(MIN..=MAX);
             let r = v.len() - 1;
             let k = v.len() - last;
@@ -240,7 +241,7 @@ mod tests {
 
 pub fn gen_vec(size: usize) -> Vec<i32> {
     let mut v: Vec<i32> = (0..size).map(|i| 0 + i as i32).collect();
-    let mut rng = StdRng::seed_from_u64(0);
+    let mut rng = StdRng::seed_from_u64(SEED);
     v.shuffle(&mut rng);
     v
 }
