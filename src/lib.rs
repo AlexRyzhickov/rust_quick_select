@@ -5,9 +5,8 @@ use rand::SeedableRng;
 use std::cmp::Ordering;
 
 const LOOPS: u32 = 100;
-pub const VEC_SIZE: usize = 10_000;
-pub const MIN: usize = 1000;
-pub const MAX: usize = 2001;
+pub const VEC_SIZE: usize = 500_000;
+pub const LAST: usize = 3000;
 pub const SEED: u64 = 0;
 
 #[derive(Clone, Copy, Debug)]
@@ -93,8 +92,6 @@ pub fn quick_select<T: PartialOrd + Copy>(v: &mut [T], l: usize, r: usize, k: us
 mod tests {
     use super::*;
     use ordered_float::OrderedFloat;
-    use rand::rngs::StdRng;
-    use rand::{Rng, SeedableRng};
     use std::collections::HashSet;
 
     #[test]
@@ -221,18 +218,16 @@ mod tests {
     fn test_i32_random() {
         for _ in 0..LOOPS {
             let mut v = gen_vec(VEC_SIZE);
-            let mut rng = StdRng::seed_from_u64(SEED);
-            let last = rng.random_range(MIN..=MAX);
             let r = v.len() - 1;
-            let k = v.len() - last;
+            let k = v.len() - LAST;
             quick_select(&mut v, 0, r, k);
             let mut set: HashSet<i32> = HashSet::new();
-            for &num in v.iter().rev().take(last) {
+            for &num in v.iter().rev().take(LAST) {
                 set.insert(num);
             }
             v.sort_by(|a, b| a.cmp(&b));
-            assert_eq!(last, set.len());
-            for &num in v.iter().rev().take(last) {
+            assert_eq!(LAST, set.len());
+            for &num in v.iter().rev().take(LAST) {
                 assert_eq!(set.contains(&num), true);
             }
         }
